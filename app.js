@@ -1,202 +1,149 @@
-const generateBtn = document.getElementById("generateBtn");
-const buttonText = document.getElementById("buttonText");
-const loader = document.getElementById("loader");
+const form = document.getElementById("generatorForm");
 
-const emptyState = document.getElementById("emptyState");
-const resultContent = document.getElementById("resultContent");
-
-const productName = document.getElementById("productName");
-const category = document.getElementById("category");
-const details = document.getElementById("details");
-const language = document.getElementById("language");
+const productNameInput = document.getElementById("productName");
+const categoryInput = document.getElementById("category");
+const productDetailsInput = document.getElementById("productDetails");
+const languageInput = document.getElementById("language");
 
 const titleOutput = document.getElementById("titleOutput");
 const descriptionOutput = document.getElementById("descriptionOutput");
-const featuresOutput = document.getElementById("featuresOutput");
+const sellingPointsOutput = document.getElementById("sellingPointsOutput");
 const captionOutput = document.getElementById("captionOutput");
 
+const generateButton = document.getElementById("generateBtn");
 
-// Generate demo listing
-generateBtn.addEventListener("click", () => {
+if (form) {
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-  const product = productName.value.trim();
-  const productCategory = category.value.trim();
-  const productDetails = details.value.trim();
-  const selectedLanguage = language.value;
+    const productName = productNameInput?.value.trim();
+    const category = categoryInput?.value.trim();
+    const productDetails = productDetailsInput?.value.trim();
+    const language = languageInput?.value || "English";
 
-  if (!product) {
-    alert("Please enter a product name.");
-    productName.focus();
-    return;
-  }
-
-  if (!productDetails) {
-    alert("Please enter some product details.");
-    details.focus();
-    return;
-  }
-
-  generateBtn.disabled = true;
-  buttonText.classList.add("hidden");
-  loader.classList.remove("hidden");
-
-  setTimeout(() => {
-
-    const cleanCategory = productCategory || "Online Store";
-
-    if (selectedLanguage === "Roman Urdu") {
-
-      titleOutput.textContent =
-        `${product} — Premium ${cleanCategory} Product`;
-
-      descriptionOutput.textContent =
-        `${product} aapki daily needs ke liye ek practical aur convenient choice hai. ` +
-        `Is product ko use karna simple hai aur iska design online shoppers ke liye attractive hai. ` +
-        `Product details: ${productDetails}`;
-
-      featuresOutput.innerHTML = `
-        <ul>
-          <li>Practical aur easy-to-use design</li>
-          <li>Daily use ke liye convenient</li>
-          <li>Simple aur user-friendly</li>
-          <li>Online shopping ke liye attractive option</li>
-          <li>Product details ke mutabiq useful features</li>
-        </ul>
-      `;
-
-      captionOutput.textContent =
-        `🔥 ${product} ab available hai!\n\n` +
-        `✨ Practical design\n` +
-        `✨ Easy to use\n` +
-        `✨ Great for everyday use\n\n` +
-        `📩 Order karne ke liye message karein!`;
-
-    } else if (selectedLanguage === "Urdu") {
-
-      titleOutput.textContent =
-        `${product} — بہترین ${cleanCategory} پروڈکٹ`;
-
-      descriptionOutput.textContent =
-        `${product} روزمرہ استعمال کے لیے ایک آسان اور مفید انتخاب ہے۔ ` +
-        `اس کا استعمال سادہ ہے اور آن لائن خریداروں کے لیے ایک بہترین آپشن ہو سکتا ہے۔ ` +
-        `پروڈکٹ کی تفصیلات: ${productDetails}`;
-
-      featuresOutput.innerHTML = `
-        <ul>
-          <li>آسان اور عملی ڈیزائن</li>
-          <li>روزمرہ استعمال کے لیے مفید</li>
-          <li>استعمال میں آسان</li>
-          <li>آن لائن شاپنگ کے لیے بہترین انتخاب</li>
-          <li>دی گئی پروڈکٹ تفصیلات کے مطابق خصوصیات</li>
-        </ul>
-      `;
-
-      captionOutput.textContent =
-        `🔥 ${product} اب دستیاب ہے!\n\n` +
-        `✨ بہترین ڈیزائن\n` +
-        `✨ استعمال میں آسان\n` +
-        `✨ روزمرہ استعمال کے لیے مفید\n\n` +
-        `📩 آرڈر کے لیے ہمیں میسج کریں!`;
-
-    } else {
-
-      titleOutput.textContent =
-        `${product} — Premium ${cleanCategory} Product`;
-
-      descriptionOutput.textContent =
-        `${product} is a practical and convenient choice for everyday use. ` +
-        `Designed to provide a simple and useful experience for online shoppers. ` +
-        `Product details: ${productDetails}`;
-
-      featuresOutput.innerHTML = `
-        <ul>
-          <li>Practical and easy-to-use design</li>
-          <li>Convenient for everyday use</li>
-          <li>Simple and user-friendly</li>
-          <li>Attractive option for online shoppers</li>
-          <li>Features based on the provided product details</li>
-        </ul>
-      `;
-
-      captionOutput.textContent =
-        `🔥 ${product} is now available!\n\n` +
-        `✨ Practical design\n` +
-        `✨ Easy to use\n` +
-        `✨ Great for everyday use\n\n` +
-        `📩 Message us to place your order!`;
-
+    if (!productName || !productDetails) {
+      alert("Please enter the product name and product details.");
+      return;
     }
 
-    emptyState.classList.add("hidden");
-    resultContent.classList.remove("hidden");
+    // Loading state
+    const originalButtonText = generateButton
+      ? generateButton.innerHTML
+      : "";
 
-    generateBtn.disabled = false;
-    buttonText.classList.remove("hidden");
-    loader.classList.add("hidden");
+    if (generateButton) {
+      generateButton.disabled = true;
+      generateButton.innerHTML = "Generating with AI ✨";
+    }
 
-    resultContent.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          productName,
+          category,
+          productDetails,
+          language
+        })
+      });
 
-  }, 700);
-});
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Something went wrong. Please try again."
+        );
+      }
+
+      // Product title
+      if (titleOutput) {
+        titleOutput.textContent = data.title || "";
+      }
+
+      // Description
+      if (descriptionOutput) {
+        descriptionOutput.textContent = data.description || "";
+      }
+
+      // Selling points
+      if (sellingPointsOutput) {
+        sellingPointsOutput.innerHTML = "";
+
+        const points = Array.isArray(data.sellingPoints)
+          ? data.sellingPoints
+          : [];
+
+        points.forEach((point) => {
+          const li = document.createElement("li");
+          li.textContent = point;
+          sellingPointsOutput.appendChild(li);
+        });
+      }
+
+      // WhatsApp / Social caption
+      if (captionOutput) {
+        captionOutput.textContent = data.caption || "";
+      }
+
+      // Scroll to results
+      const results = document.querySelector(".results");
+
+      if (results) {
+        results.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }
+
+    } catch (error) {
+      console.error("SellerBoost AI:", error);
+
+      alert(
+        error.message ||
+        "Unable to generate content. Please try again."
+      );
+
+    } finally {
+      if (generateButton) {
+        generateButton.disabled = false;
+        generateButton.innerHTML = originalButtonText;
+      }
+    }
+  });
+}
 
 
-// Copy individual result
-document.querySelectorAll(".small-copy").forEach(button => {
+// ==============================
+// COPY BUTTONS
+// ==============================
 
-  button.addEventListener("click", async () => {
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-copy]");
 
-    const targetId = button.dataset.copy;
-    const target = document.getElementById(targetId);
+  if (!button) return;
 
-    const text = target.innerText || target.textContent;
+  const targetId = button.getAttribute("data-copy");
+  const target = document.getElementById(targetId);
 
+  if (!target) return;
+
+  const text = target.innerText || target.textContent || "";
+
+  try {
     await navigator.clipboard.writeText(text);
 
-    const original = button.textContent;
+    const originalText = button.innerText;
 
-    button.textContent = "Copied ✓";
+    button.innerText = "Copied ✓";
 
     setTimeout(() => {
-      button.textContent = original;
-    }, 1200);
+      button.innerText = originalText;
+    }, 1500);
 
-  });
-
-});
-
-
-// Copy everything
-document.getElementById("copyAllBtn").addEventListener("click", async () => {
-
-  const text = `
-PRODUCT TITLE
-
-${titleOutput.textContent}
-
-DESCRIPTION
-
-${descriptionOutput.textContent}
-
-KEY SELLING POINTS
-
-${featuresOutput.innerText}
-
-WHATSAPP / SOCIAL CAPTION
-
-${captionOutput.textContent}
-  `.trim();
-
-  await navigator.clipboard.writeText(text);
-
-  const button = document.getElementById("copyAllBtn");
-
-  button.textContent = "Copied ✓";
-
-  setTimeout(() => {
-    button.textContent = "Copy All";
-  }, 1500);
-
+  } catch (error) {
+    console.error("Copy failed:", error);
+  }
 });
