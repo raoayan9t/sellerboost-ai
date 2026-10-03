@@ -1,52 +1,50 @@
-const productNameInput = document.getElementById("productName");
-const categoryInput = document.getElementById("category");
-const productDetailsInput = document.getElementById("details");
-const languageInput = document.getElementById("language");
+document.addEventListener("DOMContentLoaded", () => {
+  const productName = document.getElementById("productName");
+  const category = document.getElementById("category");
+  const details = document.getElementById("details");
+  const language = document.getElementById("language");
 
-const titleOutput = document.getElementById("titleOutput");
-const descriptionOutput = document.getElementById("descriptionOutput");
-const sellingPointsOutput = document.getElementById("featuresOutput");
-const captionOutput = document.getElementById("captionOutput");
+  const generateBtn = document.getElementById("generateBtn");
+  const buttonText = document.getElementById("buttonText");
+  const loader = document.getElementById("loader");
 
-const generateButton = document.getElementById("generateBtn");
-const buttonText = document.getElementById("buttonText");
-const loader = document.getElementById("loader");
+  const emptyState = document.getElementById("emptyState");
+  const resultContent = document.getElementById("resultContent");
 
-const emptyState = document.getElementById("emptyState");
-const resultContent = document.getElementById("resultContent");
-const copyAllButton = document.getElementById("copyAllBtn");
+  const titleOutput = document.getElementById("titleOutput");
+  const descriptionOutput = document.getElementById("descriptionOutput");
+  const featuresOutput = document.getElementById("featuresOutput");
+  const captionOutput = document.getElementById("captionOutput");
 
+  const copyAllBtn = document.getElementById("copyAllBtn");
 
-// ========================================
-// GENERATE LISTING
-// ========================================
+  // ============================
+  // GENERATE
+  // ============================
 
-if (generateButton) {
-  generateButton.addEventListener("click", async () => {
+  generateBtn.addEventListener("click", async () => {
 
-    const productName = productNameInput?.value.trim() || "";
-    const category = categoryInput?.value.trim() || "";
-    const productDetails = productDetailsInput?.value.trim() || "";
-    const language = languageInput?.value || "English";
+    const name = productName.value.trim();
+    const cat = category.value.trim();
+    const productDetails = details.value.trim();
+    const lang = language.value;
 
-    // Validation
-    if (!productName) {
+    if (!name) {
       alert("Please enter a product name.");
-      productNameInput?.focus();
+      productName.focus();
       return;
     }
 
     if (!productDetails) {
       alert("Please enter your product details.");
-      productDetailsInput?.focus();
+      details.focus();
       return;
     }
 
-    // Loading state
-    generateButton.disabled = true;
+    generateBtn.disabled = true;
 
     if (buttonText) {
-      buttonText.textContent = "Generating with AI...";
+      buttonText.textContent = "Generating...";
     }
 
     if (loader) {
@@ -61,102 +59,59 @@ if (generateButton) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          productName,
-          category,
-          productDetails,
-          language
+          productName: name,
+          category: cat,
+          productDetails: productDetails,
+          language: lang
         })
       });
 
       const data = await response.json();
 
+      console.log("SellerBoost response:", data);
+
       if (!response.ok) {
         throw new Error(
-          data.error || "Something went wrong. Please try again."
+          data.error || "AI generation failed."
         );
       }
 
-      // ========================================
-      // DISPLAY TITLE
-      // ========================================
+      titleOutput.textContent = data.title || "";
 
-      if (titleOutput) {
-        titleOutput.textContent = data.title || "";
-      }
+      descriptionOutput.textContent = data.description || "";
 
-      // ========================================
-      // DISPLAY DESCRIPTION
-      // ========================================
+      featuresOutput.innerHTML = "";
 
-      if (descriptionOutput) {
-        descriptionOutput.textContent = data.description || "";
-      }
-
-      // ========================================
-      // DISPLAY SELLING POINTS
-      // ========================================
-
-      if (sellingPointsOutput) {
-
-        sellingPointsOutput.innerHTML = "";
-
-        const points = Array.isArray(data.sellingPoints)
-          ? data.sellingPoints
-          : [];
-
-        points.forEach((point) => {
-
+      if (Array.isArray(data.sellingPoints)) {
+        data.sellingPoints.forEach((point) => {
           const div = document.createElement("div");
-
           div.textContent = "• " + point;
-
           div.style.marginBottom = "8px";
-
-          sellingPointsOutput.appendChild(div);
-
+          featuresOutput.appendChild(div);
         });
       }
 
-      // ========================================
-      // DISPLAY SOCIAL CAPTION
-      // ========================================
+      captionOutput.textContent = data.caption || "";
 
-      if (captionOutput) {
-        captionOutput.textContent = data.caption || "";
-      }
+      emptyState.classList.add("hidden");
+      resultContent.classList.remove("hidden");
 
-      // ========================================
-      // SHOW RESULTS
-      // ========================================
-
-      if (emptyState) {
-        emptyState.classList.add("hidden");
-      }
-
-      if (resultContent) {
-        resultContent.classList.remove("hidden");
-      }
-
-      // Scroll to results
-      if (resultContent) {
-        resultContent.scrollIntoView({
-          behavior: "smooth",
-          block: "start"
-        });
-      }
+      resultContent.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
 
     } catch (error) {
 
-      console.error("SellerBoost AI Error:", error);
+      console.error("SellerBoost error:", error);
 
       alert(
-        error.message ||
-        "Unable to generate content. Please try again."
+        "Error: " + error.message
       );
 
     } finally {
 
-      generateButton.disabled = false;
+      generateBtn.disabled = false;
 
       if (buttonText) {
         buttonText.textContent = "Generate Listing ✨";
@@ -167,97 +122,85 @@ if (generateButton) {
       }
 
     }
-
   });
-}
 
 
-// ========================================
-// COPY BUTTONS
-// ========================================
+  // ============================
+  // COPY BUTTONS
+  // ============================
 
-document.addEventListener("click", async (event) => {
+  document.addEventListener("click", async (event) => {
 
-  const button = event.target.closest("[data-copy]");
+    const button = event.target.closest("[data-copy]");
 
-  if (!button) return;
+    if (!button) return;
 
-  const targetId = button.getAttribute("data-copy");
+    const targetId = button.getAttribute("data-copy");
 
-  const target = document.getElementById(targetId);
+    const target = document.getElementById(targetId);
 
-  if (!target) return;
+    if (!target) return;
 
-  const text = target.innerText || target.textContent || "";
+    try {
 
-  try {
+      await navigator.clipboard.writeText(
+        target.innerText || target.textContent
+      );
 
-    await navigator.clipboard.writeText(text);
+      const oldText = button.textContent;
 
-    const originalText = button.textContent;
+      button.textContent = "Copied ✓";
 
-    button.textContent = "Copied ✓";
+      setTimeout(() => {
+        button.textContent = oldText;
+      }, 1500);
 
-    setTimeout(() => {
-      button.textContent = originalText;
-    }, 1500);
+    } catch (error) {
+      console.error("Copy error:", error);
+    }
+  });
 
-  } catch (error) {
 
-    console.error("Copy failed:", error);
+  // ============================
+  // COPY ALL
+  // ============================
 
-    alert("Could not copy. Please copy the text manually.");
+  if (copyAllBtn) {
+
+    copyAllBtn.addEventListener("click", async () => {
+
+      const text = `
+PRODUCT TITLE
+${titleOutput.innerText}
+
+DESCRIPTION
+${descriptionOutput.innerText}
+
+KEY SELLING POINTS
+${featuresOutput.innerText}
+
+WHATSAPP / SOCIAL CAPTION
+${captionOutput.innerText}
+      `.trim();
+
+      try {
+
+        await navigator.clipboard.writeText(text);
+
+        const oldText = copyAllBtn.textContent;
+
+        copyAllBtn.textContent = "Copied ✓";
+
+        setTimeout(() => {
+          copyAllBtn.textContent = oldText;
+        }, 1500);
+
+      } catch (error) {
+        console.error("Copy all error:", error);
+      }
+
+    });
 
   }
 
 });
-
-
-// ========================================
-// COPY ALL
-// ========================================
-
-if (copyAllButton) {
-
-  copyAllButton.addEventListener("click", async () => {
-
-    const title = titleOutput?.innerText || "";
-    const description = descriptionOutput?.innerText || "";
-    const points = sellingPointsOutput?.innerText || "";
-    const caption = captionOutput?.innerText || "";
-
-    const fullText = `
-PRODUCT TITLE
-${title}
-
-DESCRIPTION
-${description}
-
-KEY SELLING POINTS
-${points}
-
-WHATSAPP / SOCIAL CAPTION
-${caption}
-`.trim();
-
-    try {
-
-      await navigator.clipboard.writeText(fullText);
-
-      const originalText = copyAllButton.textContent;
-
-      copyAllButton.textContent = "Copied ✓";
-
-      setTimeout(() => {
-        copyAllButton.textContent = originalText;
-      }, 1500);
-
-    } catch (error) {
-
-      console.error("Copy all failed:", error);
-
-    }
-
-  });
-
-}
