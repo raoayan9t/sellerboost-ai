@@ -90,7 +90,7 @@ Rules:
         // CLOUDFLARE WORKERS AI
         // =========================
         const aiResponse = await env.AI.run(
-          "@cf/meta/llama-3.1-8b-instruct",
+          "@cf/meta/llama-3.1-8b-instruct-fast",
           {
             prompt: prompt,
             max_tokens: 1000,
