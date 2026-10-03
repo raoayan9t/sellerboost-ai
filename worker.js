@@ -36,6 +36,58 @@ export default {
       try {
 
         // -------------------------------------------------------
+        // AUTHENTICATE SUPABASE USER
+        // -------------------------------------------------------
+
+        const authHeader = request.headers.get("Authorization") || "";
+        const accessToken = authHeader.startsWith("Bearer ")
+          ? authHeader.slice(7).trim()
+          : "";
+
+        if (!accessToken) {
+          return Response.json(
+            { success: false, error: "Authentication required. Please log in." },
+            { status: 401 }
+          );
+        }
+
+        if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+          console.error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+          return Response.json(
+            { success: false, error: "Server database configuration is incomplete." },
+            { status: 500 }
+          );
+        }
+
+        const supabaseUrl = env.SUPABASE_URL || "https://yypthtqsmyclsyujlhzf.supabase.co";
+        const authResponse = await fetch(
+          supabaseUrl + "/auth/v1/user",
+          {
+            headers: {
+              apikey: env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_4ydhzaZ-vKoDgbNHcwim6Q_R9S72BbO",
+              Authorization: "Bearer " + accessToken
+            }
+          }
+        );
+
+        if (!authResponse.ok) {
+          return Response.json(
+            { success: false, error: "Your session is invalid or expired. Please log in again." },
+            { status: 401 }
+          );
+        }
+
+        const authenticatedUser = await authResponse.json();
+        const userId = authenticatedUser?.id;
+
+        if (!userId) {
+          return Response.json(
+            { success: false, error: "Unable to identify your account." },
+            { status: 401 }
+          );
+        }
+
+        // -------------------------------------------------------
         // READ REQUEST
         // -------------------------------------------------------
 
@@ -573,19 +625,53 @@ Return ONLY the requested JSON object.
 
 
         // =======================================================
+        // SAVE LISTING TO SUPABASE
+        // =======================================================
+
+        const saveResponse = await fetch(
+          supabaseUrl + "/rest/v1/listings",
+          {
+            method: "POST",
+            headers: {
+              apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: "Bearer " + env.SUPABASE_SERVICE_ROLE_KEY,
+              "Content-Type": "application/json",
+              Prefer: "return=minimal"
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              product_name: productName,
+              category: category || null,
+              product_details: productDetails,
+              language,
+              title,
+              description,
+              selling_points: sellingPoints,
+              caption
+            })
+          }
+        );
+
+        if (!saveResponse.ok) {
+          const saveError = await saveResponse.text();
+          console.error("Supabase listing save failed:", saveError);
+          return Response.json(
+            { success: false, error: "Listing was generated but could not be saved. Please try again." },
+            { status: 500 }
+          );
+        }
+
+        // =======================================================
         // SUCCESS RESPONSE
         // =======================================================
 
         return Response.json({
           success: true,
-
           title,
-
           description,
-
           sellingPoints,
-
-          caption
+          caption,
+          saved: true
         });
 
       } catch (error) {
