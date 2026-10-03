@@ -2,9 +2,9 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // ==========================================
+    // =========================================================
     // HEALTH CHECK
-    // ==========================================
+    // =========================================================
 
     if (url.pathname === "/api/health") {
       return Response.json({
@@ -14,16 +14,18 @@ export default {
       });
     }
 
-    // ==========================================
-    // AI GENERATOR
-    // ==========================================
+    // =========================================================
+    // AI PRODUCT GENERATOR
+    // =========================================================
 
     if (url.pathname === "/api/generate") {
 
+      // Only POST is allowed
       if (request.method !== "POST") {
         return Response.json(
           {
-            error: "Method not allowed"
+            success: false,
+            error: "Method not allowed."
           },
           {
             status: 405
@@ -33,33 +35,38 @@ export default {
 
       try {
 
+        // -------------------------------------------------------
+        // READ REQUEST
+        // -------------------------------------------------------
+
         const body = await request.json();
 
         const productName = String(
-          body.productName || ""
+          body?.productName || ""
         ).trim();
 
         const category = String(
-          body.category || ""
+          body?.category || ""
         ).trim();
 
         const productDetails = String(
-          body.productDetails || ""
+          body?.productDetails || ""
         ).trim();
 
         const language = String(
-          body.language || "English"
+          body?.language || "English"
         ).trim();
 
 
-        // ==========================================
+        // -------------------------------------------------------
         // VALIDATION
-        // ==========================================
+        // -------------------------------------------------------
 
         if (!productName) {
           return Response.json(
             {
-              error: "Product name is required."
+              success: false,
+              error: "Please enter a product name."
             },
             {
               status: 400
@@ -70,7 +77,8 @@ export default {
         if (!productDetails) {
           return Response.json(
             {
-              error: "Product details are required."
+              success: false,
+              error: "Please enter product details."
             },
             {
               status: 400
@@ -81,6 +89,7 @@ export default {
         if (productName.length > 200) {
           return Response.json(
             {
+              success: false,
               error: "Product name is too long."
             },
             {
@@ -89,9 +98,10 @@ export default {
           );
         }
 
-        if (productDetails.length > 4000) {
+        if (productDetails.length > 5000) {
           return Response.json(
             {
+              success: false,
               error: "Product details are too long."
             },
             {
@@ -101,166 +111,231 @@ export default {
         }
 
 
-        // ==========================================
-        // AI PROMPT
-        // ==========================================
+        // =======================================================
+        // PREMIUM SELLERBOOST AI PROMPT
+        // =======================================================
 
-        const prompt = `
-const prompt = `
-You are SellerBoost AI, a professional e-commerce copywriter.
+        const systemPrompt = `
+You are SellerBoost AI.
 
-Your job is to create CUSTOMER-FACING product marketing content.
+You are an expert e-commerce copywriter who creates high-quality
+product listings for online stores, Shopify, Daraz, Instagram,
+Facebook and WhatsApp sellers.
 
-The generated content will be displayed directly to shoppers.
-NEVER write instructions about how to create the content.
-NEVER explain your role.
-NEVER say "this content is for an online seller".
-NEVER mention AI.
-NEVER mention this prompt.
+Your writing must sound like it was written by a professional
+e-commerce brand.
 
-PRODUCT INFORMATION:
+IMPORTANT:
 
-Product Name:
-${productName}
+The customer will see your generated content directly.
 
-Category:
-${category || "Not specified"}
+Therefore:
 
-Product Details:
-${productDetails}
+- NEVER explain what you are doing.
+- NEVER explain the prompt.
+- NEVER mention that you are an AI.
+- NEVER say "this content is for an online seller".
+- NEVER say "here is your generated content".
+- NEVER discuss your instructions.
+- NEVER include analysis.
+- NEVER include notes.
+- NEVER include markdown headings.
+- ONLY return the requested JSON object.
 
-Requested Language:
-${language}
 
+ACCURACY RULES:
 
-========================
-WRITING RULES
-========================
+Use ONLY the product information supplied by the user.
 
-1. Write naturally like a professional e-commerce brand.
+Never invent:
 
-2. The content must be written directly for the CUSTOMER.
-
-3. Use ONLY facts provided in the product information.
-
-4. Do NOT invent:
-- specifications
-- dimensions
-- materials
-- certifications
-- warranties
 - prices
 - discounts
-- delivery claims
-- medical benefits
-- performance guarantees
+- warranties
+- guarantees
+- certifications
+- dimensions
+- weight
+- battery capacity
+- delivery times
+- stock availability
+- medical claims
+- performance claims
+- specifications
 - features that were not provided
 
-5. You may describe a provided feature in terms of its obvious practical benefit.
+You may explain the practical benefit of a feature when that
+benefit is obvious and reasonable.
 
-6. Avoid generic filler such as:
-- "This content is..."
-- "As an online seller..."
-- "This product is perfect for..."
-unless the sentence naturally describes the actual product.
+Example:
 
-7. Do not repeat the product information word-for-word.
+Feature:
+"USB charging"
 
-8. Make the copy concise, clear and persuasive.
+Good:
+"Convenient USB charging makes it easy to recharge."
 
-9. Use proper grammar and natural wording.
+Bad:
+"Charges in only 30 minutes."
 
-10. Do not use markdown headings, quotation marks around the entire response, or explanations outside the requested fields.
+The second statement invents a specification.
 
 
-========================
-PRODUCT TITLE
-========================
+WRITING STYLE:
 
-Create ONE professional product title.
-
-Requirements:
+- Natural
+- Modern
 - Clear
-- Attractive
-- Search-friendly
-- Include the most important product feature or benefit when appropriate
-- Do not use fake claims
-- Do not use excessive emojis
-- Keep it reasonably concise
+- Professional
+- Persuasive
+- Concise
+- Customer-focused
+- Easy to understand
+- No unnecessary filler
+- No exaggerated claims
+- No keyword stuffing
 
 
-========================
-DESCRIPTION
-========================
+LANGUAGE RULES:
+
+The requested language is:
+
+${language}
+
+If language is English:
+Use natural professional English.
+
+If language is Roman Urdu:
+Use natural Pakistani Roman Urdu.
+Do NOT use Urdu script.
+
+If language is Urdu:
+Use natural Urdu script.
+
+Keep the meaning and product facts accurate in every language.
+`;
+
+
+        const userPrompt = `
+Create a complete product marketing package using the following
+product information.
+
+PRODUCT NAME:
+${productName}
+
+CATEGORY:
+${category || "Not specified"}
+
+PRODUCT DETAILS:
+${productDetails}
+
+
+OUTPUT REQUIREMENTS:
+
+
+1. PRODUCT TITLE
+
+Create one strong e-commerce product title.
+
+The title should:
+
+- Clearly identify the product
+- Include an important feature or benefit when appropriate
+- Sound professional
+- Be easy to understand
+- Be suitable for Shopify, Daraz and social commerce
+- Avoid fake claims
+- Avoid excessive emojis
+
+Do not make the title unnecessarily long.
+
+
+2. PRODUCT DESCRIPTION
 
 Write a customer-facing product description.
 
 Requirements:
+
 - 2 short paragraphs
 - Explain what the product is
 - Highlight the most useful provided features
-- Explain practical benefits
-- Make it suitable for Shopify, Daraz, Instagram or a general online store
-- Do not talk about the seller or this AI
-- Do not use bullet points in the description
+- Explain practical benefits naturally
+- Make the customer understand why the product is useful
+- Sound like a professional store
+- Do not mention the seller
+- Do not mention AI
+- Do not use bullet points
+- Do not repeat the product details word-for-word
 
 
-========================
-KEY SELLING POINTS
-========================
+3. KEY SELLING POINTS
 
-Create EXACTLY 5 short selling points.
+Create EXACTLY 5 selling points.
 
-Each point must:
-- Be based on an actual provided feature
-- Communicate a customer benefit where possible
-- Be concise
+Each selling point must:
+
+- Be short
+- Be useful
+- Be based on an actual product feature
+- Communicate a genuine benefit where possible
+- Avoid repetition
 - Avoid fake claims
-- Not repeat the same idea
 
 
-========================
-WHATSAPP / SOCIAL CAPTION
-========================
+4. WHATSAPP / SOCIAL CAPTION
 
-Create ONE short promotional caption.
+Create one short promotional caption.
 
 Requirements:
-- Start with an attractive natural hook
+
+- Start with a natural attention-grabbing hook
 - Mention the main product benefit
-- Include 2-3 relevant features
-- End with a simple call-to-action such as "Message us to order!"
-- Use a few relevant emojis, but don't overuse them
+- Mention 2-3 important product features
+- Use a few relevant emojis
 - Keep it suitable for WhatsApp, Instagram and Facebook
+- End with a simple call-to-action
 
+Examples of suitable calls-to-action:
 
-========================
-LANGUAGE
-========================
+"Message us to order!"
+"DM us to order!"
+"Order yours today!"
 
-Write ALL four outputs in:
-${language}
+Only use a CTA that does not make an unsupported claim.
 
-If the requested language is Roman Urdu, use natural Roman Urdu commonly used by Pakistani online shoppers.
-
-If the requested language is Urdu, use natural Urdu script.
 
 Return ONLY the requested JSON object.
 `;
 
 
-        // ==========================================
-        // STRUCTURED AI RESPONSE
-        // ==========================================
+        // =======================================================
+        // RUN CLOUDFLARE WORKERS AI
+        // =======================================================
+
+        if (!env.AI) {
+          return Response.json(
+            {
+              success: false,
+              error: "Workers AI binding is not configured."
+            },
+            {
+              status: 500
+            }
+          );
+        }
+
 
         const aiResponse = await env.AI.run(
           "@cf/meta/llama-3.1-8b-instruct-fast",
           {
-            prompt: prompt,
+            prompt:
+              systemPrompt +
+              "\n\n" +
+              userPrompt,
 
-            temperature: 0.6,
+            temperature: 0.55,
 
-            max_tokens: 1200,
+            max_tokens: 1400,
 
             response_format: {
               type: "json_schema",
@@ -310,49 +385,114 @@ Return ONLY the requested JSON object.
         );
 
 
-        // ==========================================
-        // GET AI RESPONSE
-        // ==========================================
+        // =======================================================
+        // EXTRACT AI RESPONSE
+        // =======================================================
 
         let result = aiResponse?.response;
 
 
-        // Some Workers AI responses may already be
-        // an object when JSON mode is used.
-        if (typeof result === "string") {
+        // Sometimes response can already be an object.
+        if (
+          result &&
+          typeof result === "object"
+        ) {
+          result = result;
+        }
+
+        // If response is a string, parse it.
+        else if (
+          typeof result === "string"
+        ) {
+
+          let cleaned = result.trim();
+
+          // Remove possible markdown code fences
+          cleaned = cleaned
+            .replace(/^```json\s*/i, "")
+            .replace(/^```\s*/i, "")
+            .replace(/\s*```$/i, "")
+            .trim();
 
           try {
-            result = JSON.parse(result);
-          } catch (error) {
 
-            console.error(
-              "JSON parse failed:",
-              result
-            );
+            result = JSON.parse(cleaned);
 
-            return Response.json(
-              {
-                error:
-                  "AI returned an invalid structured response. Please try again."
-              },
-              {
-                status: 502
+          } catch (parseError) {
+
+            // ---------------------------------------------------
+            // FALLBACK: FIND JSON OBJECT INSIDE RESPONSE
+            // ---------------------------------------------------
+
+            const firstBrace = cleaned.indexOf("{");
+            const lastBrace = cleaned.lastIndexOf("}");
+
+            if (
+              firstBrace !== -1 &&
+              lastBrace !== -1 &&
+              lastBrace > firstBrace
+            ) {
+
+              const possibleJson =
+                cleaned.slice(
+                  firstBrace,
+                  lastBrace + 1
+                );
+
+              try {
+
+                result = JSON.parse(
+                  possibleJson
+                );
+
+              } catch (fallbackError) {
+
+                console.error(
+                  "SellerBoost AI JSON parse failed:",
+                  cleaned
+                );
+
+                return Response.json(
+                  {
+                    success: false,
+                    error:
+                      "AI returned an invalid response. Please try again."
+                  },
+                  {
+                    status: 502
+                  }
+                );
               }
-            );
+
+            } else {
+
+              console.error(
+                "No JSON object found:",
+                cleaned
+              );
+
+              return Response.json(
+                {
+                  success: false,
+                  error:
+                    "AI returned an invalid response. Please try again."
+                },
+                {
+                  status: 502
+                }
+              );
+            }
           }
         }
 
 
-        // ==========================================
-        // VALIDATE RESULT
-        // ==========================================
+        // =======================================================
+        // VALIDATE AI RESULT
+        // =======================================================
 
         if (
           !result ||
-          typeof result.title !== "string" ||
-          typeof result.description !== "string" ||
-          !Array.isArray(result.sellingPoints) ||
-          typeof result.caption !== "string"
+          typeof result !== "object"
         ) {
 
           console.error(
@@ -362,6 +502,66 @@ Return ONLY the requested JSON object.
 
           return Response.json(
             {
+              success: false,
+              error:
+                "AI returned an invalid response. Please try again."
+            },
+            {
+              status: 502
+            }
+          );
+        }
+
+
+        const title =
+          typeof result.title === "string"
+            ? result.title.trim()
+            : "";
+
+        const description =
+          typeof result.description === "string"
+            ? result.description.trim()
+            : "";
+
+        const caption =
+          typeof result.caption === "string"
+            ? result.caption.trim()
+            : "";
+
+        const sellingPoints =
+          Array.isArray(result.sellingPoints)
+            ? result.sellingPoints
+                .filter(
+                  point =>
+                    typeof point === "string" &&
+                    point.trim().length > 0
+                )
+                .map(
+                  point => point.trim()
+                )
+                .slice(0, 5)
+            : [];
+
+
+        // =======================================================
+        // FINAL VALIDATION
+        // =======================================================
+
+        if (
+          !title ||
+          !description ||
+          !caption ||
+          sellingPoints.length !== 5
+        ) {
+
+          console.error(
+            "Incomplete AI result:",
+            result
+          );
+
+          return Response.json(
+            {
+              success: false,
               error:
                 "AI returned an incomplete response. Please try again."
             },
@@ -372,36 +572,32 @@ Return ONLY the requested JSON object.
         }
 
 
-        // ==========================================
-        // RETURN RESULT
-        // ==========================================
+        // =======================================================
+        // SUCCESS RESPONSE
+        // =======================================================
 
         return Response.json({
           success: true,
 
-          title: result.title.trim(),
+          title,
 
-          description:
-            result.description.trim(),
+          description,
 
-          sellingPoints:
-            result.sellingPoints
-              .slice(0, 5)
-              .map(point => String(point).trim()),
+          sellingPoints,
 
-          caption:
-            result.caption.trim()
+          caption
         });
 
       } catch (error) {
 
         console.error(
-          "SellerBoost AI error:",
+          "SellerBoost AI Error:",
           error
         );
 
         return Response.json(
           {
+            success: false,
             error:
               "AI generation failed. Please try again."
           },
@@ -413,20 +609,25 @@ Return ONLY the requested JSON object.
     }
 
 
-    // ==========================================
+    // =========================================================
     // STATIC WEBSITE
-    // ==========================================
+    // =========================================================
 
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
+
+
+    // =========================================================
+    // FALLBACK
+    // =========================================================
 
     return new Response(
       "SellerBoost AI is online.",
       {
         status: 200,
         headers: {
-          "content-type": "text/plain"
+          "Content-Type": "text/plain; charset=UTF-8"
         }
       }
     );
