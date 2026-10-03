@@ -226,18 +226,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (loader) loader.classList.remove("hidden");
 
     try {
-      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-      if (sessionError || !sessionData.session?.access_token) {
-        updateAuthUI(null);
-        openAuth("login");
-        throw new Error("Your session has expired. Please log in again.");
-      }
-
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + sessionData.session.access_token
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           productName: name,
@@ -269,6 +261,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       captionOutput.textContent = data.caption || "";
+
+      const { error: saveError } = await supabaseClient.from("listings").insert({
+        user_id: currentUser.id,
+        product_name: name,
+        category: cat || null,
+        product_details: productDetails,
+        language: lang,
+        title: data.title || "",
+        description: data.description || "",
+        selling_points: data.sellingPoints || [],
+        caption: data.caption || ""
+      });
+
+      if (saveError) {
+        console.error("Listing save error:", saveError);
+        throw new Error("Listing generated, but could not be saved.");
+      }
 
       emptyState.classList.add("hidden");
       resultContent.classList.remove("hidden");
