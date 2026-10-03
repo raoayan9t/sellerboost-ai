@@ -21,10 +21,44 @@
       <a href="#generator">Generator</a>
     </nav>
 
-    <a href="#generator" class="nav-btn">Try Free</a>
+    <div class="auth-area">
+      <button id="loginNavBtn" class="nav-btn auth-login-btn">Log In</button>
+      <div id="userMenu" class="user-menu hidden">
+        <span id="userEmail"></span>
+        <button id="logoutBtn" class="logout-btn">Log Out</button>
+      </div>
+    </div>
   </header>
 
-  <main>
+  <!-- AUTH MODAL -->
+  <div id="authModal" class="auth-modal hidden" aria-hidden="true">
+    <div class="auth-backdrop" data-close-auth></div>
+    <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button id="closeAuthBtn" class="auth-close" aria-label="Close">×</button>
+      <div class="auth-brand"><span>✦</span> SellerBoost<span>AI</span></div>
+      <p class="eyebrow">ACCOUNT</p>
+      <h2 id="authTitle">Welcome back</h2>
+      <p id="authSubtitle" class="auth-subtitle">Log in to use your SellerBoost AI workspace.</p>
+
+      <form id="authForm">
+        <label for="authEmail">Email</label>
+        <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+
+        <label for="authPassword">Password</label>
+        <input id="authPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters" minlength="6" required>
+
+        <button id="authSubmitBtn" class="auth-submit" type="submit">Log In</button>
+      </form>
+
+      <p id="authMessage" class="auth-message" role="status"></p>
+
+      <button id="authSwitchBtn" class="auth-switch" type="button">
+        Don't have an account? <strong>Sign up</strong>
+      </button>
+    </div>
+  </div>
+
+<main>
 
     <section class="hero">
       <div class="hero-badge">
@@ -249,6 +283,7 @@
   </footer>
 
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 
 </body>
