@@ -758,3 +758,6 @@ footer p {
     padding: 26px 20px;
   }
 }
+
+
+.listings-toolbar{display:flex;gap:10px;margin-bottom:18px}.listings-toolbar input{flex:1}.listings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.listing-card{padding:20px;background:rgba(17,23,34,.8);border:1px solid var(--line);border-radius:18px}.listing-card-top{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.listing-card h3{font-size:18px}.listing-description{color:#dce1e9;font-size:13px;margin-bottom:12px}.listing-points{color:#c8ced8;font-size:13px;margin-bottom:14px}.listing-caption{padding:12px;background:#0b1019;border-radius:10px;color:#cfd5df;font-size:12px;white-space:pre-wrap;margin-bottom:12px}.listing-copy{width:100%}@media(max-width:700px){.listings-grid{grid-template-columns:1fr}.listings-toolbar{flex-direction:column}}
