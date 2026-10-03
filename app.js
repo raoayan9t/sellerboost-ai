@@ -298,6 +298,40 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ============================
+  // MY LISTINGS
+  // ============================
+  const listingsGrid = document.getElementById("listingsGrid");
+  const listingsEmpty = document.getElementById("listingsEmpty");
+  const listingSearch = document.getElementById("listingSearch");
+  const refreshListingsBtn = document.getElementById("refreshListingsBtn");
+  let savedListings = [];
+
+  function renderListings() {
+    const q = (listingSearch?.value || "").toLowerCase().trim();
+    const items = savedListings.filter(x => [x.product_name,x.category,x.title].join(" ").toLowerCase().includes(q));
+    listingsGrid.innerHTML = "";
+    listingsEmpty.classList.toggle("hidden", items.length > 0);
+    items.forEach(item => {
+      const card=document.createElement("article"); card.className="listing-card";
+      const top=document.createElement("div"); top.className="listing-card-top";
+      const title=document.createElement("h3"); title.textContent=item.product_name||item.title||"Listing";
+      const del=document.createElement("button"); del.className="small-copy"; del.textContent="Delete";
+      del.onclick=async()=>{const r=await supabaseClient.from("listings").delete().eq("id",item.id);if(r.error){alert(r.error.message);return;}loadListings();};
+      top.append(title,del);
+      const desc=document.createElement("p");desc.className="listing-description";desc.textContent=item.description||"";
+      const points=document.createElement("div");points.className="listing-points";(Array.isArray(item.selling_points)?item.selling_points:[]).forEach(p=>{const d=document.createElement("div");d.textContent="• "+p;points.appendChild(d);});
+      const cap=document.createElement("div");cap.className="listing-caption";cap.textContent=item.caption||"";
+      const copy=document.createElement("button");copy.className="copy-btn listing-copy";copy.textContent="Copy All";
+      copy.onclick=()=>navigator.clipboard.writeText("PRODUCT TITLE\n"+item.title+"\n\nDESCRIPTION\n"+item.description+"\n\nKEY SELLING POINTS\n"+(item.selling_points||[]).map(p=>"• "+p).join("\n")+"\n\nCAPTION\n"+item.caption);
+      card.append(top,desc,points,cap,copy);listingsGrid.appendChild(card);
+    });
+  }
+  async function loadListings(){if(!currentUser){savedListings=[];renderListings();return;}const r=await supabaseClient.from("listings").select("*").order("created_at",{ascending:false});if(r.error){console.error(r.error);return;}savedListings=r.data||[];renderListings();}
+  listingSearch?.addEventListener("input",renderListings);
+  refreshListingsBtn?.addEventListener("click",loadListings);
+  setTimeout(loadListings,300);
+
+  // ============================
   // COPY BUTTONS
   // ============================
 
